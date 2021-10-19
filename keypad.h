@@ -47,12 +47,12 @@ enum event_type
 	UNDEFINED
 };
 
-struct keypad_event
+typedef struct keypad_event
 {
 	enum event_type type;
 	uint8_t col;
 	uint8_t row;
-};
+} keypad_event_t;
 
 static uint32_t const keypad_in[] = { KEYPAD_IN };
 static uint32_t const keypad_out[] = { KEYPAD_OUT };
@@ -154,6 +154,19 @@ void keypad_init()
 	for (uint32_t i = 0; i < KEYPAD_BUFFER_SIZE; i++)
 	{
 		keypad_events[i].type = UNDEFINED;
+	}
+}
+
+
+// Run on main core
+void keypad_update(void (*action)(keypad_event_t const *))
+{
+	if (multicore_fifo_rvalid())
+	{
+		uint32_t index = multicore_fifo_pop_blocking();
+		struct keypad_event event;
+		keypad_get_event(index, &event);
+		action(&event);
 	}
 }
 

@@ -18,13 +18,10 @@
 
 
 static display_t displays[2];
-static field_t fields[2];
-// 	#define ROCKETS_COUNT 100
-// static rocket_t rockets[ROCKETS_COUNT];
-// static uint8_t rockets_count;
+// static field_t fields[2];
 static rocket_t rocket;
-#define ASTROID_COUNT 12
-static astroid_t astroids[ASTROID_COUNT];
+static astroidfield_t astroidfield;
+static starfield_t starfield;
 
 static rocket_control_t controls[4][3] = {
 	rocket_control_none, rocket_control_none, rocket_control_none,
@@ -35,7 +32,7 @@ static rocket_control_t controls[4][3] = {
 
 
 // Action to perform on a keypad event
-void key_action(struct keypad_event const *event)
+void key_action(keypad_event_t const *event)
 {
 	switch (event->type)
 	{
@@ -49,11 +46,6 @@ void key_action(struct keypad_event const *event)
 		break;
 
 	case KEY_PRESSED:
-		// rocket_init(&rockets[rockets_count]);
-		// rockets_count++;
-		// if (rockets_count == ROCKETS_COUNT)
-		// 	rockets_count = 0;
-
 		control = controls[event->row][event->col];
 		if (control == rocket_control_none)
 			break;
@@ -67,8 +59,6 @@ void key_action(struct keypad_event const *event)
 }
 
 
-#define ASTROID_TIMER 50 + (rand() % 50)
-
 int main()
 {
 	stdio_init_all();
@@ -81,74 +71,53 @@ int main()
 
 	painter_init(displays, 2, 2 * DISPLAY_COMS, 8 * DISPLAY_PAGES);
 
-	field_init(32, 6, 14, 20, &fields[0]);
-	field_init(32, 38, 14, 14, &fields[1]);
+	// field_init(32, 6, 14, 20, &fields[0]);
+	// field_init(32, 38, 14, 14, &fields[1]);
 
 	keypad_init();
 
-	// rockets_count = 0;
-	// for (uint8_t i = 0; i < ROCKETS_COUNT; ++i)
-	// 	rockets[i].t = 0;
-
 	rocket_init(&rocket);
-
-	for (uint8_t i = 0; i < ASTROID_COUNT; ++i)
-		astroids[i].t = 0;
+	astroidfield_init(&astroidfield);
+	starfield_init(&starfield);
 
 	multicore_launch_core1(&keypad_main);
 
-	uint8_t astroid_timer = ASTROID_TIMER;
-	astroid_init(&astroids[0]);
-
 	while (1)
 	{
-		if (multicore_fifo_rvalid())
-		{
-			uint32_t index = multicore_fifo_pop_blocking();
-			struct keypad_event event;
-			keypad_get_event(index, &event);
-			key_action(&event);
-		}
+		keypad_update(&key_action);
 
 		painter_clear();
 
-		// uint8_t count = 0;
-		// for (uint8_t i = 0; i < ROCKETS_COUNT; ++i)
-		// {
-		// 	if (rockets[i].t != 0)
-		// 		count++;
+		starfield_update(&starfield);
+		painter_starfield(&starfield);
 
-		// 	rocket_update(&rockets[i]);
-		// 	painter_rocket(&rockets[i]);
-		// }
-
-		// painter_text('0' + count / 10, 0, 0);
-		// painter_text('0' + count % 10, 6, 0);
-
-		if (astroid_timer == 0)
-		{
-			for (uint8_t i = 0; i < ASTROID_COUNT; ++i)
-			{
-				if (astroids[i].t == 0)
-				{
-					astroid_init(&astroids[i]);
-					break;
-				}
-			}
-
-			astroid_timer = ASTROID_TIMER;
-		}
-		else
-			astroid_timer--;
-
-		for (uint8_t i = 0; i < ASTROID_COUNT; ++i)
-		{
-			astroid_update(&astroids[i]);
-			painter_astroid(&astroids[i]);
-		}
+		astroidfield_update(&astroidfield);
+		painter_astroidfield(&astroidfield);
 
 		rocket_update(&rocket);
 		painter_rocket(&rocket);
+
+		for (uint8_t m = 0; m < MISSLE_COUNT; ++m)
+		{
+			if (rocket.missles[m].t == 0)
+				continue;
+
+			for (uint8_t a = 0; a < ASTROID_COUNT; ++a)
+			{
+				if (astroidfield.astroids[a].t == 0)
+					continue;
+
+				if ((rocket.missles[m].x >= astroidfield.astroids[a].x) &&
+				    (rocket.missles[m].x + MISSLE_WIDTH <= astroidfield.astroids[a].x + ASTROID_WIDTH) &&
+				    (rocket.missles[m].y >= astroidfield.astroids[a].y) &&
+				    (rocket.missles[m].y + 2 <= astroidfield.astroids[a].y + (8 * ASTROID_PAGES)))
+				{
+					rocket.missles[m].t = 0;
+					astroidfield.astroids[a].t = 0;
+					break;
+				}
+			}
+		}
 
 		// painter_text('0' + rocket.control / 10, 0, 0);
 		// painter_text('0' + rocket.control % 10, 6, 0);

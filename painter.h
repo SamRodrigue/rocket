@@ -225,18 +225,34 @@ void painter_rocket(rocket_t const *rocket)
 }
 
 
-void painter_astroid(astroid_t const *astroid)
+void painter_astroidfield(astroidfield_t const *astroidfield)
 {
-	if (astroid->t == 0)
-		return;
-
-	for (uint8_t i = 0; i < ASTROID_WIDTH; ++i)
+	for (uint8_t a = 0; a < ASTROID_COUNT; ++a)
 	{
-		painter_map_page(astroid_form[i][0], astroid->x + i, astroid->y, true);
-		painter_map_page(astroid_form[i][1], astroid->x + i, astroid->y + 8, true);
-	}
+		if (astroidfield->astroids[a].t == 0)
+			continue;
 
-	painter_make_dirty(astroid->x, astroid->y, ASTROID_WIDTH, 8);
+		for (uint8_t i = 0; i < ASTROID_WIDTH; ++i)
+		{
+			painter_map_page(astroid_form[i][0], astroidfield->astroids[a].x + i, astroidfield->astroids[a].y, true);
+			painter_map_page(astroid_form[i][1], astroidfield->astroids[a].x + i, astroidfield->astroids[a].y + 8, true);
+		}
+
+		painter_make_dirty(astroidfield->astroids[a].x, astroidfield->astroids[a].y, ASTROID_WIDTH, 8);
+	}
+}
+
+
+void painter_starfield(starfield_t const *starfield)
+{
+	for (uint8_t i = 0; i < STAR_COUNT; ++i)
+	{
+		if (starfield->stars[i].t == 0)
+			continue;
+
+		painter_map_page(0x1, starfield->stars[i].x, starfield->stars[i].y, true);
+		painter_make_dirty(starfield->stars[i].x, starfield->stars[i].y, 1, 1);
+	}
 }
 
 
