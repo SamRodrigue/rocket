@@ -6,6 +6,7 @@
 #include "display.h"
 #include "field.h"
 #include "painter.h"
+#include "collider.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,39 +86,17 @@ int main()
 	while (1)
 	{
 		keypad_update(&key_action);
+		starfield_update(&starfield);
+		astroidfield_update(&astroidfield);
+		rocket_update(&rocket);
+
+		collider_missle_astroid(&rocket, &astroidfield);
 
 		painter_clear();
 
-		starfield_update(&starfield);
 		painter_starfield(&starfield);
-
-		astroidfield_update(&astroidfield);
 		painter_astroidfield(&astroidfield);
-
-		rocket_update(&rocket);
 		painter_rocket(&rocket);
-
-		for (uint8_t m = 0; m < MISSLE_COUNT; ++m)
-		{
-			if (rocket.missles[m].t == 0)
-				continue;
-
-			for (uint8_t a = 0; a < ASTROID_COUNT; ++a)
-			{
-				if (astroidfield.astroids[a].t == 0)
-					continue;
-
-				if ((rocket.missles[m].x >= astroidfield.astroids[a].x) &&
-				    (rocket.missles[m].x + MISSLE_WIDTH <= astroidfield.astroids[a].x + ASTROID_WIDTH) &&
-				    (rocket.missles[m].y >= astroidfield.astroids[a].y) &&
-				    (rocket.missles[m].y + 2 <= astroidfield.astroids[a].y + (8 * ASTROID_PAGES)))
-				{
-					rocket.missles[m].t = 0;
-					astroidfield.astroids[a].t = 0;
-					break;
-				}
-			}
-		}
 
 		// painter_text('0' + rocket.control / 10, 0, 0);
 		// painter_text('0' + rocket.control % 10, 6, 0);
