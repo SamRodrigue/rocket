@@ -24,8 +24,8 @@ add_executable(rocket main.c )
 pico_set_program_name(rocket "rocket")
 pico_set_program_version(rocket "0.1")
 
-pico_enable_stdio_uart(rocket 1)
-pico_enable_stdio_usb(rocket 0)
+pico_enable_stdio_uart(rocket 0)
+pico_enable_stdio_usb(rocket 1)
 
 # Add the standard library to the build
 target_link_libraries(rocket pico_stdlib pico_multicore hardware_i2c)
